@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VPS Control Panel</title>
+
+<!-- xterm.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/addon-fit.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg:       #0a0c10;
+    --bg2:      #0e1117;
+    --bg3:      #151820;
+    --border:   #1e2430;
+    --border2:  #2a3040;
+    --accent:   #00d4ff;
+    --accent2:  #7c3aed;
+    --green:    #00e96a;
+    --red:      #ff4757;
+    --yellow:   #ffd32a;
+    --text:     #e2e8f0;
+    --text2:    #8892a4;
+    --text3:    #4a5568;
+    --glow:     rgba(0, 212, 255, 0.15);
+    --radius:   12px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── PARTICLES BG ── */
+  #particles {
+    position: fixed; inset:0; pointer-events:none; z-index:0;
+    background: 
+      radial-gradient(ellipse 80% 60% at 20% -10%, rgba(0,212,255,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(124,58,237,0.08) 0%, transparent 60%),
+      var(--bg);
+  }
+
+  #particles::before {
+    content:'';
+    position:absolute; inset:0;
+    background-image: 
+      radial-gradient(1px 1px at 20% 30%, rgba(0,212,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 60%, rgba(0,212,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.1) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 70%, rgba(0,212,255,0.2) 0%, transparent 100%);
+    background-size: 400px 400px;
+  }
+
+  /* ── LOGIN PAGE ── */
+  #login-page {
+    position:fixed; inset:0; z-index:100;
+    display:flex; align-items:center; justify-content:center;
+    background: var(--bg);
+  }
+
+  .login-box {
+    width: 440px;
+    padding: 48px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 0 80px rgba(0,212,255,0.08), 0 40px 80px rgba(0,0,0,0.6);
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.5s cubic-bezier(0.23,1,0.32,1);
+  }
+
+  .login-box::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(30px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  .login-logo {
+    display:flex; align-items:center; gap:12px;
+    margin-bottom: 40px;
+  }
+
+  .login-logo-icon {
+    width:44px; height:44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  .login-logo-text { font-size:22px; font-weight:800; letter-spacing:-0.5px; }
+  .login-logo-text span { color: var(--accent); }
+
+  .login-heading { font-size:28px; font-weight:800; margin-bottom:8px; letter-spacing:-0.5px; }
+  .login-sub { font-size:14px; color:var(--text2); margin-bottom:32px; font-family:'JetBrains Mono',monospace; }
+
+  .field { margin-bottom:20px; }
+  .field label { display:block; font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+
+  .field input {
+    width:100%; padding:14px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size:14px;
+    outline:none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+  }
+
+  .btn-login {
+    width:100%; padding:15px;
+    background: linear-gradient(135deg, var(--accent), #0084ff);
+    border:none; border-radius:var(--radius);
+    color: #000;
+    font-family:'Syne',sans-serif;
+    font-size:15px; font-weight:700;
+    letter-spacing:0.5px;
+    cursor:pointer;
+    margin-top:8px;
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.3);
+  }
+
+  .btn-login:hover { transform:translateY(-1px); box-shadow:0 8px 30px rgba(0,212,255,0.4); }
+  .btn-login:active { transform:translateY(0); }
+  .btn-login:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .login-error {
+    background: rgba(255,71,87,0.1);
+    border: 1px solid rgba(255,71,87,0.3);
+    border-radius:8px; padding:12px 16px;
+    color: var(--red); font-size:13px;
+    margin-top:16px; display:none;
+  }
+
+  /* ── MAIN PANEL ── */
+  #panel { display:none; flex-direction:column; height:100vh; position:relative; z-index:1; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    height:60px;
+    background: rgba(14,17,23,0.95);
+    border-bottom: 1px solid var(--border);
+    display:flex; align-items:center; gap:0;
+    padding:0 24px;
+    backdrop-filter: blur(20px);
+    flex-shrink:0;
+    position:relative;
+    z-index:50;
+  }
+
+  .topbar-logo {
+    display:flex; align-items:center; gap:10px;
+    margin-right:32px;
+  }
+
+  .topbar-logo-icon {
+    width:32px; height:32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius:7px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px;
+  }
+
+  .topbar-title { font-size:16px; font-weight:800; letter-spacing:-0.3px; }
+  .topbar-title span { color:var(--accent); }
+
+  .topbar-nav { display:flex; align-items:center; gap:4px; flex:1; }
+
+  .tab-btn {
+    padding:7px 18px;
+    border:none; border-radius:8px;
+    background:transparent; color:var(--text2);
+    font-family:'Syne',sans-serif;
+    font-size:14px; font-weight:600;
+    cursor:pointer;
+    transition: all 0.2s;
+    display:flex; align-items:center; gap:8px;
+  }
+
+  .tab-btn:hover { color:var(--text); background: var(--bg3); }
+  .tab-btn.active { background: var(--bg3); color:var(--accent); }
+  .tab-btn .icon { font-size:16px; }
+
+  .topbar-right { display:flex; align-items:center; gap:12px; margin-left:auto; }
+
+  .server-badge {
+    display:flex; align-items:center; gap:8px;
+    padding:6px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px; color:var(--text2);
+  }
+
+  .status-dot {
+    width:7px; height:7px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; }
+    50%      { opacity:0.4; }
+  }
+
+  .btn-logout {
+    padding:7px 16px;
+    background:transparent;
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--text2);
+    font-family:'Syne',sans-serif;
+    font-size:13px; font-weight:600;
+    cursor:pointer;
+    transition:all 0.2s;
+  }
+
+  .btn-logout:hover { border-color:var(--red); color:var(--red); background:rgba(255,71,87,0.06); }
+
+  /* ── MAIN CONTENT ── */
+  .main-content { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+
+  /* ── VIEWS ── */
+  .view { display:none; flex:1; overflow:hidden; }
+  .view.active { display:flex; flex-direction:column; }
+
+  /* ── OVERVIEW ── */
+  #view-overview {
+    padding:32px;
+    overflow-y:auto;
+    gap:24px;
+  }
+
+  .overview-header { margin-bottom:8px; }
+  .overview-header h2 { font-size:26px; font-weight:800; letter-spacing:-0.5px; }
+  .overview-header p { color:var(--text2); font-size:14px; margin-top:4px; }
+
+  .stats-grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+    gap:16px;
+    margin-bottom:24px;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    position:relative; overflow:hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .stat-card:hover { border-color:var(--border2); transform:translateY(-2px); }
+  .stat-card::before {
+    content:'';
+    position:absolute; top:0; left:0; width:3px; height:100%;
+    background: linear-gradient(180deg, var(--accent), transparent);
+  }
+
+  .stat-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text2); margin-bottom:8px; }
+  .stat-value { font-size:26px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--text); }
+  .stat-sub { font-size:12px; color:var(--text3); margin-top:4px; font-family:'JetBrains Mono',monospace; }
+
+  .progress-bar {
+    height:4px; background:var(--bg3); border-radius:999px; margin-top:12px; overflow:hidden;
+  }
+
+  .progress-fill {
+    height:100%; border-radius:999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.8s cubic-bezier(0.23,1,0.32,1);
+  }
+
+  .info-row {
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:var(--radius); padding:20px 24px;
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+    gap:16px;
+  }
+
+  .info-item { }
+  .info-item .label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text3); margin-bottom:4px; }
+  .info-item .value { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--text); }
+
+  /* ── SSH TERMINAL ── */
+  #view-ssh {
+    background: #000;
+    flex-direction:column;
+  }
+
+  .terminal-topbar {
+    height:40px;
+    background: var(--bg2);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:8px;
+    padding:0 16px;
+    flex-shrink:0;
+  }
+
+  .term-dot { width:12px; height:12px; border-radius:50%; }
+
+  .ssh-status {
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px; color:var(--text2);
+    margin-left:8px;
+  }
+
+  .ssh-status.connected { color:var(--green); }
+  .ssh-status.error { color:var(--red); }
+
+  #terminal-container {
+    flex:1; padding:16px; overflow:hidden;
+  }
+
+  #terminal-container .xterm {
+    height:100%;
+  }
+
+  /* ── SFTP FILE MANAGER ── */
+  #view-sftp { flex-direction:column; overflow:hidden; }
+
+  .sftp-toolbar {
+    height:52px;
+    background: var(--bg2);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:10px;
+    padding:0 20px;
+    flex-shrink:0;
+  }
+
+  .path-bar {
+    flex:1;
+    display:flex; align-items:center; gap:6px;
+    background:var(--bg3);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 12px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px; color:var(--text);
+    cursor:text;
+    min-width:0;
+  }
+
+  .path-bar span { color:var(--accent); }
+  .path-bar .path-text { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .btn-tool {
+    padding:8px 14px;
+    background:var(--bg3);
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--text2);
+    font-family:'Syne',sans-serif;
+    font-size:13px; font-weight:600;
+    cursor:pointer;
+    transition:all 0.2s;
+    white-space:nowrap;
+    display:flex; align-items:center; gap:6px;
+  }
+
+  .btn-tool:hover { background:var(--border); color:var(--text); }
+  .btn-tool.primary { background:var(--accent); color:#000; border-color:var(--accent); }
+  .btn-tool.primary:hover { box-shadow:0 4px 12px rgba(0,212,255,0.3); }
+
+  .sftp-content { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+
+  .file-list-header {
+    display:grid;
+    grid-template-columns: 32px 1fr 100px 140px 90px;
+    gap:8px;
+    padding:10px 16px;
+    border-bottom:1px solid var(--border);
+    font-size:11px; text-transform:uppercase; letter-spacing:1px;
+    color:var(--text3); font-weight:600;
+  }
+
+  .file-list { flex:1; overflow-y:auto; }
+
+  .file-item {
+    display:grid;
+    grid-template-columns: 32px 1fr 100px 140px 90px;
+    gap:8px;
+    padding:11px 16px;
+    border-bottom:1px solid rgba(30,36,48,0.5);
+    cursor:pointer;
+    align-items:center;
+    transition: background 0.1s;
+    position:relative;
+  }
+
+  .file-item:hover { background: rgba(255,255,255,0.025); }
+  .file-item.selected { background: rgba(0,212,255,0.06); }
+
+  .file-icon { font-size:18px; text-align:center; }
+  .file-name { font-size:14px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .file-name.is-dir { color:var(--accent); font-weight:600; }
+  .file-size, .file-date, .file-perm {
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px; color:var(--text2);
+  }
+
+  .file-item:hover .file-actions { display:flex; }
+
+  .file-actions {
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    display:none; gap:6px; align-items:center;
+    background:var(--bg3);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:4px 8px;
+  }
+
+  .fa-btn {
+    padding:4px 8px;
+    background:none; border:none;
+    color:var(--text2);
+    font-size:12px; cursor:pointer;
+    border-radius:4px;
+    font-family:'Syne',sans-serif;
+    font-weight:600;
+    transition:all 0.15s;
+  }
+
+  .fa-btn:hover { background:var(--border); color:var(--text); }
+  .fa-btn.danger:hover { background:rgba(255,71,87,0.15); color:var(--red); }
+
+  /* ── UPLOAD DROP ZONE ── */
+  .drop-overlay {
+    position:fixed; inset:0; z-index:200;
+    background:rgba(0,0,0,0.85);
+    display:none; align-items:center; justify-content:center;
+    flex-direction:column; gap:16px;
+    backdrop-filter:blur(8px);
+  }
+
+  .drop-overlay.active { display:flex; }
+
+  .drop-box {
+    width:400px; height:250px;
+    border:2px dashed var(--accent);
+    border-radius:20px;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:12px;
+    font-size:18px; font-weight:700;
+    color:var(--accent);
+    animation: dropPulse 1.5s infinite;
+  }
+
+  @keyframes dropPulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(0,212,255,0.3); }
+    50%      { box-shadow:0 0 30px 10px rgba(0,212,255,0.1); }
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position:fixed; inset:0; z-index:300;
+    background:rgba(0,0,0,0.7);
+    display:none; align-items:center; justify-content:center;
+    backdrop-filter:blur(4px);
+  }
+
+  .modal-overlay.active { display:flex; }
+
+  .modal {
+    width:400px;
+    background:var(--bg2);
+    border:1px solid var(--border2);
+    border-radius:16px;
+    padding:28px;
+    box-shadow:0 40px 80px rgba(0,0,0,0.6);
+  }
+
+  .modal h3 { font-size:18px; font-weight:700; margin-bottom:16px; }
+
+  .modal input {
+    width:100%; padding:12px 14px;
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:8px; color:var(--text);
+    font-family:'JetBrains Mono',monospace; font-size:14px;
+    outline:none; margin-bottom:16px;
+  }
+
+  .modal input:focus { border-color:var(--accent); }
+
+  .modal-btns { display:flex; gap:10px; justify-content:flex-end; }
+
+  .btn-cancel {
+    padding:10px 20px;
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:8px; color:var(--text2);
+    font-family:'Syne',sans-serif; font-weight:600;
+    cursor:pointer; transition:all 0.2s;
+  }
+
+  .btn-cancel:hover { color:var(--text); }
+
+  .btn-confirm {
+    padding:10px 20px;
+    background:var(--accent); border:none;
+    border-radius:8px; color:#000;
+    font-family:'Syne',sans-serif; font-weight:700;
+    cursor:pointer; transition:all 0.2s;
+  }
+
+  .btn-confirm:hover { box-shadow:0 4px 12px rgba(0,212,255,0.3); }
+
+  /* ── TOAST ── */
+  #toast-container {
+    position:fixed; bottom:24px; right:24px; z-index:999;
+    display:flex; flex-direction:column; gap:8px;
+  }
+
+  .toast {
+    padding:12px 20px;
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:10px; font-size:14px; font-weight:600;
+    box-shadow:0 8px 30px rgba(0,0,0,0.4);
+    animation: toastIn 0.3s ease;
+    display:flex; align-items:center; gap:8px;
+    max-width:300px;
+  }
+
+  @keyframes toastIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+  .toast.success { border-color:rgba(0,233,106,0.3); }
+  .toast.error   { border-color:rgba(255,71,87,0.3); }
+
+  .toast.success::before { content:'✓'; color:var(--green); font-size:16px; }
+  .toast.error::before   { content:'✗'; color:var(--red);   font-size:16px; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--text3); }
+
+  /* ── LOADING ── */
+  .loading-spinner {
+    display:inline-block; width:18px; height:18px;
+    border:2px solid var(--border2);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .empty-state {
+    flex:1; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:12px; color:var(--text3);
+  }
+
+  .empty-state .icon { font-size:40px; }
+  .empty-state p { font-size:14px; }
+</style>
+</head>
+<body>
+
+<!-- PARTICLES BG -->
+<div id="particles"></div>
+
+<!-- ═══ LOGIN PAGE ═══════════════════════════════════════════════ -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">⚡</div>
+      <div class="login-logo-text">VPS<span>Panel</span></div>
+    </div>
+    <div class="login-heading">Welcome back</div>
+    <div class="login-sub">$ ssh secure@vps.control</div>
+
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="inp-email" placeholder="your@email.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+
+    <button class="btn-login" id="btn-login">Access Panel →</button>
+    <div class="login-error" id="login-error">Invalid credentials. Please try again.</div>
+  </div>
+</div>
+
+<!-- ═══ MAIN PANEL ═══════════════════════════════════════════════ -->
+<div id="panel">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">⚡</div>
+      <div class="topbar-title">VPS<span>Panel</span></div>
+    </div>
+
+    <div class="topbar-nav">
+      <button class="tab-btn active" data-tab="overview"><span class="icon">📊</span> Overview</button>
+      <button class="tab-btn" data-tab="ssh"><span class="icon">💻</span> SSH Terminal</button>
+      <button class="tab-btn" data-tab="sftp"><span class="icon">📁</span> File Manager</button>
+    </div>
+
+    <div class="topbar-right">
+      <div class="server-badge">
+        <div class="status-dot"></div>
+        <span id="server-hostname">Loading...</span>
+      </div>
+      <button class="btn-logout" id="btn-logout">Logout</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="main-content">
+
+    <!-- ── OVERVIEW ── -->
+    <div class="view active" id="view-overview">
+      <div class="overview-header">
+        <h2>Server Overview</h2>
+        <p>Real-time system information and resource usage</p>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">CPU Cores</div>
+          <div class="stat-value" id="stat-cpu">—</div>
+          <div class="stat-sub" id="stat-load">load avg —</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Memory Used</div>
+          <div class="stat-value" id="stat-mem">—</div>
+          <div class="stat-sub" id="stat-mem-sub">— of —</div>
+          <div class="progress-bar"><div class="progress-fill" id="mem-bar" style="width:0%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Uptime</div>
+          <div class="stat-value" id="stat-uptime">—</div>
+          <div class="stat-sub">Server running time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Platform</div>
+          <div class="stat-value" id="stat-platform" style="font-size:18px">—</div>
+          <div class="stat-sub" id="stat-arch">—</div>
+        </div>
+      </div>
+
+      <div class="info-row" id="info-row">
+        <div class="info-item">
+          <div class="label">Hostname</div>
+          <div class="value" id="info-hostname">—</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Platform</div>
+          <div class="value" id="info-platform">—</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Architecture</div>
+          <div class="value" id="info-arch">—</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Total Memory</div>
+          <div class="value" id="info-totalmem">—</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Free Memory</div>
+          <div class="value" id="info-freemem">—</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Load Average</div>
+          <div class="value" id="info-load">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SSH TERMINAL ── -->
+    <div class="view" id="view-ssh">
+      <div class="terminal-topbar">
+        <div class="term-dot" style="background:#ff5f57"></div>
+        <div class="term-dot" style="background:#ffbd2e; margin-left:6px"></div>
+        <div class="term-dot" style="background:#28c840; margin-left:6px"></div>
+        <span class="ssh-status" id="ssh-status">Not connected</span>
+        <button class="btn-tool" id="btn-reconnect" style="margin-left:auto;font-size:12px;padding:5px 10px;">⟳ Reconnect</button>
+        <button class="btn-tool" id="btn-clear-term" style="font-size:12px;padding:5px 10px;">Clear</button>
+      </div>
+      <div id="terminal-container"></div>
+    </div>
+
+    <!-- ── SFTP FILE MANAGER ── -->
+    <div class="view" id="view-sftp">
+      <div class="sftp-toolbar">
+        <button class="btn-tool" id="btn-up">↑ Up</button>
+        <div class="path-bar">
+          <span>/</span>
+          <span class="path-text" id="current-path-display">/</span>
+        </div>
+        <button class="btn-tool" id="btn-mkdir">+ Folder</button>
+        <button class="btn-tool primary" id="btn-upload">↑ Upload</button>
+        <input type="file" id="file-input" style="display:none" multiple/>
+        <button class="btn-tool" id="btn-refresh">⟳</button>
+      </div>
+
+      <div class="sftp-content">
+        <div class="file-list-header">
+          <div></div>
+          <div>Name</div>
+          <div>Size</div>
+          <div>Modified</div>
+          <div>Perms</div>
+        </div>
+        <div class="file-list" id="file-list">
+          <div class="empty-state"><div class="icon">📁</div><p>Loading...</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- UPLOAD DROP OVERLAY -->
+<div class="drop-overlay" id="drop-overlay">
+  <div class="drop-box">
+    <div style="font-size:48px">📂</div>
+    <div>Drop files to upload</div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Create Folder</h3>
+    <input type="text" id="modal-input" placeholder="folder-name"/>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="modal-cancel">Cancel</button>
+      <button class="btn-confirm" id="modal-confirm">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════
+const state = {
+  currentPath: '/',
+  selectedFiles: new Set(),
+  sshConnected: false,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════════════
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  LOGIN
+// ═══════════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const btn   = document.getElementById('btn-login');
+
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
+
+  try {
+    const r = await fetch('/api/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password: pass})
+    });
+
+    if (r.ok) {
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('panel').style.display = 'flex';
+      loadOverview();
+      loadFileList('/');
+    } else {
+      document.getElementById('login-error').style.display = 'block';
+    }
+  } catch (e) {
+    document.getElementById('login-error').textContent = 'Server error: ' + e.message;
+    document.getElementById('login-error').style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Access Panel →';
+}
+
+document.getElementById('btn-login').addEventListener('click', doLogin);
+document.getElementById('inp-pass').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+document.getElementById('inp-email').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+
+document.getElementById('btn-logout').addEventListener('click', async () => {
+  await fetch('/api/logout', { method:'POST' });
+  location.reload();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════════════════
+let termInitialized = false;
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('view-' + tab).classList.add('active');
+
+    if (tab === 'ssh' && !termInitialized) {
+      initTerminal();
+      termInitialized = true;
+    }
+    if (tab === 'sftp') {
+      loadFileList(state.currentPath);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  OVERVIEW
+// ═══════════════════════════════════════════════════════════════════
+async function loadOverview() {
+  try {
+    const r = await fetch('/api/status');
+    if (!r.ok) return;
+    const d = await r.json();
+
+    document.getElementById('server-hostname').textContent = d.hostname;
+    document.getElementById('stat-cpu').textContent = d.cpuCount;
+    document.getElementById('stat-load').textContent = 'load ' + d.loadAvg;
+    document.getElementById('stat-mem').textContent = d.usedMem;
+    document.getElementById('stat-mem-sub').textContent = `${d.usedMem} of ${d.totalMem}`;
+    document.getElementById('mem-bar').style.width = d.memPercent + '%';
+    document.getElementById('stat-uptime').textContent = d.uptime;
+    document.getElementById('stat-platform').textContent = d.platform;
+    document.getElementById('stat-arch').textContent = d.arch;
+
+    document.getElementById('info-hostname').textContent  = d.hostname;
+    document.getElementById('info-platform').textContent  = d.platform;
+    document.getElementById('info-arch').textContent      = d.arch;
+    document.getElementById('info-totalmem').textContent  = d.totalMem;
+    document.getElementById('info-freemem').textContent   = d.freeMem;
+    document.getElementById('info-load').textContent      = d.loadAvg;
+  } catch(e) {
+    console.warn('Status error', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SSH TERMINAL
+// ═══════════════════════════════════════════════════════════════════
+let term, fitAddon, ws;
+
+function initTerminal() {
+  term = new Terminal({
+    theme: {
+      background:  '#000000',
+      foreground:  '#e2e8f0',
+      cursor:      '#00d4ff',
+      cursorAccent:'#000',
+      selection:   'rgba(0,212,255,0.2)',
+      black:   '#1a1a2e', red:     '#ff4757',
+      green:   '#00e96a', yellow:  '#ffd32a',
+      blue:    '#00d4ff', magenta: '#7c3aed',
+      cyan:    '#00cec9', white:   '#e2e8f0',
+    },
+    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+    fontSize: 14,
+    lineHeight: 1.4,
+    cursorBlink: true,
+    scrollback: 5000,
+    allowProposedApi: true,
+  });
+
+  fitAddon = new FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+  term.open(document.getElementById('terminal-container'));
+  fitAddon.fit();
+
+  window.addEventListener('resize', () => { fitAddon.fit(); syncResize(); });
+  connectSSH();
+
+  term.onData(data => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type:'input', data }));
+    }
+  });
+
+  document.getElementById('btn-clear-term').addEventListener('click', () => term.clear());
+  document.getElementById('btn-reconnect').addEventListener('click', connectSSH);
+}
+
+function connectSSH() {
+  if (ws) { try { ws.close(); } catch(e){} }
+  setSSHStatus('Connecting...', '');
+
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws/ssh`);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type:'auth', token: window.__pass }));
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'output') {
+      term.write(atob(msg.data));
+    } else if (msg.type === 'status') {
+      if (msg.text.includes('Connected')) {
+        setSSHStatus('● Connected', 'connected');
+        syncResize();
+      } else {
+        term.writeln('\r\n\x1b[33m' + msg.text + '\x1b[0m');
+      }
+    } else if (msg.type === 'error') {
+      setSSHStatus('● Error', 'error');
+      term.writeln('\r\n\x1b[31m✗ ' + msg.text + '\x1b[0m');
+    } else if (msg.type === 'exit') {
+      setSSHStatus('Disconnected', '');
+      term.writeln('\r\n\x1b[33m[Session closed]\x1b[0m');
+    }
+  };
+
+  ws.onclose = () => setSSHStatus('Disconnected', '');
+  ws.onerror = () => setSSHStatus('● Error', 'error');
+}
+
+function syncResize() {
+  if (!term || !ws || ws.readyState !== WebSocket.OPEN) return;
+  const dims = fitAddon.proposeDimensions();
+  if (dims) ws.send(JSON.stringify({ type:'resize', rows: dims.rows, cols: dims.cols }));
+}
+
+function setSSHStatus(text, cls) {
+  const el = document.getElementById('ssh-status');
+  el.textContent = text;
+  el.className = 'ssh-status ' + (cls || '');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  FILE MANAGER (SFTP)
+// ═══════════════════════════════════════════════════════════════════
+async function loadFileList(dir) {
+  const list = document.getElementById('file-list');
+  state.currentPath = dir;
+  document.getElementById('current-path-display').textContent = dir;
+
+  list.innerHTML = '<div class="empty-state"><div class="loading-spinner"></div></div>';
+
+  try {
+    const r = await fetch('/api/sftp/list?path=' + encodeURIComponent(dir));
+    const d = await r.json();
+
+    if (!r.ok) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${d.error}</p></div>`;
+      return;
+    }
+
+    if (d.items.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="icon">📂</div><p>Empty directory</p></div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    d.items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'file-item';
+      el.innerHTML = `
+        <div class="file-icon">${item.type==='dir' ? '📁' : getFileIcon(item.name)}</div>
+        <div class="file-name ${item.type==='dir'?'is-dir':''}">${esc(item.name)}</div>
+        <div class="file-size">${item.type==='dir' ? '—' : formatBytes(item.size)}</div>
+        <div class="file-date">${formatDate(item.modified)}</div>
+        <div class="file-perm">${item.permissions}</div>
+        <div class="file-actions">
+          ${item.type==='file' ? `<button class="fa-btn" data-action="download" data-path="${esc(dir+'/'+item.name)}" data-name="${esc(item.name)}">⬇</button>` : ''}
+          <button class="fa-btn" data-action="rename" data-path="${esc(dir+'/'+item.name)}" data-name="${esc(item.name)}">✎</button>
+          <button class="fa-btn danger" data-action="delete" data-path="${esc(dir+'/'+item.name)}" data-type="${item.type}" data-name="${esc(item.name)}">✕</button>
+        </div>
+      `;
+
+      // Double-click to navigate
+      if (item.type === 'dir') {
+        el.addEventListener('dblclick', () => {
+          const newPath = (dir === '/' ? '' : dir) + '/' + item.name;
+          loadFileList(newPath);
+        });
+      }
+
+      // Action buttons
+      el.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          handleFileAction(btn.dataset.action, btn.dataset);
+        });
+      });
+
+      list.appendChild(el);
+    });
+  } catch(e) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+async function handleFileAction(action, data) {
+  if (action === 'download') {
+    window.open('/api/sftp/download?path=' + encodeURIComponent(data.path));
+  }
+
+  if (action === 'delete') {
+    if (!confirm(`Delete "${data.name}"?`)) return;
+    const r = await fetch('/api/sftp/delete', {
+      method:'DELETE',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: data.path, type: data.type })
+    });
+    if (r.ok) { toast(`Deleted: ${data.name}`); loadFileList(state.currentPath); }
+    else { const d=await r.json(); toast(d.error,'error'); }
+  }
+
+  if (action === 'rename') {
+    openModal('Rename', data.name, async (newName) => {
+      const newPath = data.path.replace(/[^/]+$/, '') + newName;
+      const r = await fetch('/api/sftp/rename', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ from: data.path, to: newPath })
+      });
+      if (r.ok) { toast('Renamed successfully'); loadFileList(state.currentPath); }
+      else { const d=await r.json(); toast(d.error,'error'); }
+    });
+  }
+}
+
+// Up button
+document.getElementById('btn-up').addEventListener('click', () => {
+  const parts = state.currentPath.split('/').filter(Boolean);
+  parts.pop();
+  loadFileList('/' + parts.join('/') || '/');
+});
+
+// Refresh
+document.getElementById('btn-refresh').addEventListener('click', () => loadFileList(state.currentPath));
+
+// Create folder
+document.getElementById('btn-mkdir').addEventListener('click', () => {
+  openModal('New Folder', '', async (name) => {
+    const newPath = (state.currentPath === '/' ? '' : state.currentPath) + '/' + name;
+    const r = await fetch('/api/sftp/mkdir', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: newPath })
+    });
+    if (r.ok) { toast('Folder created'); loadFileList(state.currentPath); }
+    else { const d=await r.json(); toast(d.error,'error'); }
+  });
+});
+
+// Upload button
+document.getElementById('btn-upload').addEventListener('click', () => {
+  document.getElementById('file-input').click();
+});
+
+document.getElementById('file-input').addEventListener('change', async (e) => {
+  await uploadFiles(e.target.files);
+  e.target.value = '';
+});
+
+async function uploadFiles(files) {
+  for (const file of files) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('path', state.currentPath);
+    try {
+      const r = await fetch('/api/sftp/upload', { method:'POST', body:fd });
+      if (r.ok) toast(`Uploaded: ${file.name}`);
+      else { const d=await r.json(); toast(d.error,'error'); }
+    } catch(e) {
+      toast(e.message, 'error');
+    }
+  }
+  loadFileList(state.currentPath);
+}
+
+// Drag & drop
+document.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  if (document.getElementById('view-sftp').classList.contains('active')) {
+    document.getElementById('drop-overlay').classList.add('active');
+  }
+});
+
+document.addEventListener('dragleave', (e) => {
+  if (!e.relatedTarget || e.relatedTarget === document.documentElement) {
+    document.getElementById('drop-overlay').classList.remove('active');
+  }
+});
+
+document.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  document.getElementById('drop-overlay').classList.remove('active');
+  if (document.getElementById('view-sftp').classList.contains('active')) {
+    await uploadFiles(e.dataTransfer.files);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════════════════════════════
+let modalCallback = null;
+
+function openModal(title, defaultVal, cb) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-input').value = defaultVal;
+  document.getElementById('modal').classList.add('active');
+  document.getElementById('modal-input').focus();
+  modalCallback = cb;
+}
+
+document.getElementById('modal-confirm').addEventListener('click', () => {
+  const val = document.getElementById('modal-input').value.trim();
+  if (!val) return;
+  document.getElementById('modal').classList.remove('active');
+  if (modalCallback) modalCallback(val);
+  modalCallback = null;
+});
+
+document.getElementById('modal-cancel').addEventListener('click', () => {
+  document.getElementById('modal').classList.remove('active');
+  modalCallback = null;
+});
+
+document.getElementById('modal-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('modal-confirm').click();
+  if (e.key === 'Escape') document.getElementById('modal-cancel').click();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function formatBytes(b) {
+  if (!b) return '0 B';
+  const units = ['B','KB','MB','GB','TB'];
+  let i = 0;
+  while (b >= 1024 && i < units.length-1) { b/=1024; i++; }
+  return b.toFixed(i?1:0) + ' ' + units[i];
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) +
+         ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+
+function getFileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const icons = {
+    js:'📜',ts:'📜',py:'🐍',php:'🐘',rb:'💎',go:'🔵',
+    html:'🌐',css:'🎨',json:'📋',xml:'📋',yaml:'📋',yml:'📋',
+    txt:'📄',md:'📝',pdf:'📕',doc:'📘',docx:'📘',xls:'📗',xlsx:'📗',
+    png:'🖼',jpg:'🖼',jpeg:'🖼',gif:'🖼',svg:'🖼',webp:'🖼',
+    mp4:'🎬',mov:'🎬',avi:'🎬',mp3:'🎵',wav:'🎵',
+    zip:'📦',gz:'📦',tar:'📦',rar:'📦',
+    sh:'⚙️',bash:'⚙️',env:'⚙️',conf:'⚙️',
+    sql:'🗃️',db:'🗃️',
+  };
+  return icons[ext] || '📄';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Store password for WS auth
+document.getElementById('inp-pass').addEventListener('input', (e) => {
+  window.__pass = e.target.value;
+});
+
+// Capture on login
+const origDoLogin = doLogin;
+window.doLogin = function() {
+  window.__pass = document.getElementById('inp-pass').value;
+  return origDoLogin.apply(this, arguments);
+};
+document.getElementById('btn-login').addEventListener('click', () => { window.__pass = document.getElementById('inp-pass').value; }, true);
+
+// Auto refresh overview every 30s
+setInterval(() => {
+  if (document.getElementById('view-overview').classList.contains('active')) loadOverview();
+}, 30000);
+</script>
+</body>
+</html>
